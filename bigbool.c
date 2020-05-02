@@ -10,46 +10,20 @@ int main()
     if (vector == NULL)
     {
         puts("Ну сорри, слишком большой вектор! Мне не хватает рессурсов памяти, чтобы его запомнить!");
+        return 1;
+    }
+
+    struct bigbool* war = conversion_bool(vector);
+    if (war == NULL)
+    {
+        puts("Кажется, вы ввели не правильный вектор!(но это  не точно)");
+        return 1;
     }
     
+    char* vector1 = conversion_char(war);
     
-
-    // int j = -1;            
-    // for (int i = 0; i < len; i++)
-    // {
-    //     if(i%8 == 0)
-    //     {
-    //         j++;
-    //         war->parts[j] = 0;
-    //     }
-    //     char a = vector[i];
-    //     if (((uint8_t)(a - '0') | 0x1) != 0x1)
-    //     {
-    //         printf("Вы ввели не верный вектор, попробуйте снова!\n");
-    //         return 1;
-    //     }
-        
-    //     war.parts[j] = war.parts[j] | (uint8_t)((uint8_t)(a  - '0') << (i%8));
-    // }
-
-    // free(vector);
-
-
-
-
-    // char* vector1 = calloc(513, sizeof(char));
-    // int k = -1;
-    // for (int i = 0; i < len; i++)
-    // {
-    //     if(i%8 == 0)
-    //     {
-    //         k++;
-    //     }
-    //     uint8_t a = war.parts[k];
-    //     vector1[i] = ((int)((a & (uint8_t)(1 << i%8)) >> i%8) + '0');
-    // }
-    // printf("%d\n", war.parts[0]);
-    // printf("%s\n", vector1);
+    printf("%s\n", vector1);
+    
 return 0;
 }
  

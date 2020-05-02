@@ -10,7 +10,10 @@ struct bigbool
         int last_byte;
     };
 
+
 char* scan_vector();
+struct bigbool* conversion_bool (char* vector);
+char *conversion_char(struct bigbool *war);
 
 
 
