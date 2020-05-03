@@ -101,3 +101,39 @@ char *conversion_char(struct bigbool *war)
     vector[len] = 0x0;
     return vector;
 }
+
+struct bigbool *shift_left(struct bigbool *war, int n)
+{
+    if (n == 0)
+    {
+        return war;
+    }
+    if (n < 0)
+    {
+        n *= -1;
+        return shift_right(war, n);
+    }
+    if (n > (8 - (int)war->last_bit))
+    {
+        int k = n/8 + (n%8 != 0);
+        war->parts = (uint8_t *)realloc(war->parts, (int)war->last_byte + k);
+        if (war->parts == NULL)
+        {
+            return NULL;
+        }
+        for (int i = war->last_byte; i < (int)war->last_byte + k; i++)
+        {
+            war->parts[i] = 0;
+        }
+        war->last_byte += k;
+        war->last_bit = (war->last_bit + n) % 8;
+        return war;
+    }
+    war->last_bit += n;
+return war;
+}
+
+struct bigbool *shift_right(struct bigbool *war, int n)
+{
+
+}

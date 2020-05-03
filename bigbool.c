@@ -19,11 +19,27 @@ int main()
         puts("Кажется, вы ввели не правильный вектор!(но это  не точно)");
         return 1;
     }
-    
+
+    // int len =(war->last_byte - 1) * 8 + war->last_bit;
+    // printf("%d\n", len);
+    // int res = 0;
+    // for (int i = 0; i < war->last_byte; i++)
+    // {
+    //     res += (int)war->parts[i];
+    // }
+    // printf("%d\n", res);
+
+    int s = (int)war->last_bit;
+    int d = (int)war->last_byte;
+    printf("%d, %d\n", s, d);
+    shift_left(war, 1);
+    int s1 = (int)war->last_bit;
+    int d1 = (int)war->last_byte;
+    printf("%d, %d\n", s1, d1);
+
     char* vector1 = conversion_char(war);
-    
     printf("%s\n", vector1);
-    
+
 return 0;
 }
  

@@ -12,9 +12,11 @@ struct bigbool
 
 
 char* scan_vector();
+
 struct bigbool* conversion_bool (char* vector);
 char *conversion_char(struct bigbool *war);
 
-
+struct bigbool *shift_left(struct bigbool *war, int n);
+struct bigbool *shift_right(struct bigbool *war, int n);
 
 #endif
