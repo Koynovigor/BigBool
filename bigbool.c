@@ -6,6 +6,7 @@
 
 int main()
 {
+    printf("Введите Ваш вектор: ");
     char* vector = scan_vector();
     if (vector == NULL)
     {
@@ -20,26 +21,26 @@ int main()
         return 1;
     }
 
-    // int len =(war->last_byte - 1) * 8 + war->last_bit;
-    // printf("%d\n", len);
-    // int res = 0;
-    // for (int i = 0; i < war->last_byte; i++)
+    // int status = 0;
+    // do
     // {
-    //     res += (int)war->parts[i];
-    // }
-    // printf("%d\n", res);
+    //     printf("Выбирите действие:\nСдвиг вправо - 1\nСдвиг влево - 2\nВыход - 0\n");
+    //     scanf("%d", &status);
 
-    int s = (int)war->last_bit;
-    int d = (int)war->last_byte;
-    printf("%d, %d\n", s, d);
-    shift_left(war, 1);
-    int s1 = (int)war->last_bit;
-    int d1 = (int)war->last_byte;
-    printf("%d, %d\n", s1, d1);
+    //     if (status == 1);
+    //     {
+    //         printf("На сколько позиций хотите выполнить сдвиг? ");
+    //         int right = 0;
+    //         scanf("%d", &right);
+    //         shift_right(war, right);
 
-    char* vector1 = conversion_char(war);
-    printf("%s\n", vector1);
-
+    //     }
+    // } while (status != 0);
+   
+    printf("%d, %d\n", war->last_bit, war->last_byte);
+    shift_right(war, 17);
+    printf("%s\n", conversion_char(war));
+    printf("%d, %d\n", war->last_bit, war->last_byte);
 return 0;
 }
  

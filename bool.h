@@ -2,7 +2,6 @@
 #ifndef BOOL_H
 #define BOOL_H
 
-
 struct bigbool 
     {
         uint8_t* parts;

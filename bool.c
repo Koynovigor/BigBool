@@ -133,7 +133,46 @@ struct bigbool *shift_left(struct bigbool *war, int n)
 return war;
 }
 
-struct bigbool *shift_right(struct bigbool *war, int n)
-{
 
+struct bigbool *shift_right(struct bigbool *war, int n) // n = 17; last_bit = 5; last_byte = 3;
+{
+    if (n == 0)
+    {
+        return war;
+    }
+
+    if (n < 0)
+    {
+        n *= -1;
+        return shift_left(war, n);
+    }
+
+    if (n >= war->last_bit)
+    {
+        int k = (n - war->last_bit)/8 + 1; // k = 2;
+        
+        if (k > 1)
+        {
+            for (int i = war->last_byte - 1; i > war->last_byte - k; i--) // i = 2, 1;
+            {
+                war->parts[i] = 0;
+            }
+            
+        }
+        war->last_byte -= k; // last_byte = 0;
+
+        war->last_bit = (war->last_bit + (8 - n%8))%8; // last_bit = (5 + (8 - 1))%8 = 4;
+        for (int i = war->last_bit; i <= 8 ; i++) // i = 4, 5, 6, 7, 8;
+        {
+            war->parts[war->last_byte - 1] = war->parts[war->last_byte - 1] & ~((uint8_t)(1<<i));
+        }
+        return war; 
+    }
+    
+    for (int i = war->last_bit - n; i < war->last_bit; i++)
+    {
+        war->parts[war->last_byte - 1] = war->parts[war->last_byte - 1] & ~((uint8_t)(1<<i));
+    }
+    war->last_bit -= n;
+return war;
 }
