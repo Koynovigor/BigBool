@@ -108,11 +108,18 @@ struct bigbool *shift_left(struct bigbool *war, int n)
     {
         return war;
     }
+    
     if (n < 0)
     {
         n *= -1;
         return shift_right(war, n);
     }
+
+    if (war == NULL)
+    {
+        return NULL;
+    }
+    
     if (n > (8 - (int)war->last_bit))
     {
         int k = n/8 + (n%8 != 0);
@@ -147,6 +154,11 @@ struct bigbool *shift_right(struct bigbool *war, int n) // n = 17; last_bit = 5;
         return shift_left(war, n);
     }
 
+    if (war == NULL)
+    {
+        return NULL;
+    }
+
     if (n >= war->last_bit)
     {
         int k = (n - war->last_bit)/8 + 1; // k = 2;
@@ -175,4 +187,57 @@ struct bigbool *shift_right(struct bigbool *war, int n) // n = 17; last_bit = 5;
     }
     war->last_bit -= n;
 return war;
+}
+
+struct bigbool* cyclic_shift_left(struct bigbool *war, int n)
+{
+    if (n == 0)
+    {
+        return war;
+    }
+
+    if (n < 0)
+    {
+        n *= -1;
+        return cyclic_shift_right(war, n);
+    }
+
+    if (war == NULL)
+    {
+        return NULL;
+    }
+
+    n = n%((war->last_byte - 1) * 8 + war->last_bit);
+    for (int i = 0; i < n; i++)
+    {
+        int k = war->last_bit - 1;
+        for (int j = k - 1; j >= 0; j--)
+        {
+            uint8_t x = (war->parts[war->last_byte - 1] >> k) & 1;
+            uint8_t y = (war->parts[war->last_byte - 1] >> j) & 1;
+            x = x ^ y;
+            x = (x << k) | (x << j);
+            war->parts[war->last_byte - 1] = war->parts[war->last_byte - 1] ^ x;
+        }
+        
+        for (int i = war->last_byte - 2; i >= 0; i--)
+        {
+            for (int j = 7; j >= 0; j--)
+            {
+                uint8_t x = (war->parts[war->last_byte - 1] >> k) & 1;
+                uint8_t y = (war->parts[i] >> j) & 1;
+                x = x ^ y; 
+                war->parts[war->last_byte - 1] = war->parts[war->last_byte - 1] ^ (x << k);
+                war->parts[i] = war->parts[i] ^ (x << j);
+            } 
+        }
+        
+    }
+return war;
+
+}
+
+struct bigbool* cyclic_shift_right(struct bigbool *war, int n)
+{
+    return war;
 }

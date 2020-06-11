@@ -21,26 +21,8 @@ int main()
         return 1;
     }
 
-    // int status = 0;
-    // do
-    // {
-    //     printf("Выбирите действие:\nСдвиг вправо - 1\nСдвиг влево - 2\nВыход - 0\n");
-    //     scanf("%d", &status);
+    printf("%s\n", conversion_char(cyclic_shift_left(war, 1)));
 
-    //     if (status == 1);
-    //     {
-    //         printf("На сколько позиций хотите выполнить сдвиг? ");
-    //         int right = 0;
-    //         scanf("%d", &right);
-    //         shift_right(war, right);
-
-    //     }
-    // } while (status != 0);
-   
-    printf("%d, %d\n", war->last_bit, war->last_byte);
-    shift_right(war, 17);
-    printf("%s\n", conversion_char(war));
-    printf("%d, %d\n", war->last_bit, war->last_byte);
 return 0;
 }
  
