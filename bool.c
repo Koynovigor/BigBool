@@ -12,10 +12,28 @@ char *scan_vector()
     char *str = calloc(count_max, sizeof(char));
     if (str == NULL)
     {
+        perror("Не хватает места");
         return NULL;
     }
+
+    int beginning = 1;
     while ((symbol = fgetc(stdin)) != '\n')
     {
+        if (((symbol - '0') | 0x1) != 0x1)
+        {
+            perror("Не правильно введён вектор");
+            return NULL;
+        }
+
+        if (((symbol - '0') == 0x0) && (beginning))
+        {
+            continue;
+        }
+        if (((symbol - '0') == 0x1) && (beginning))
+        {
+            beginning--;
+        }
+        
         str[count] = symbol;
         count++;
         if (count == count_max)
@@ -31,7 +49,7 @@ char *scan_vector()
     return str;
 }
 
-struct bigbool *char_from_BB(char *vector)
+struct bigbool *char_from_bool(char *vector)
 {
     int len = strlen(vector);
     if (len == 0)
@@ -69,17 +87,14 @@ struct bigbool *char_from_BB(char *vector)
             j++;
         }
         char a = vector[i];
-        if (((uint8_t)(a - '0') | 0x1) != 0x1)
-        {
-            return NULL;
-        }
 
         war->parts[j] = war->parts[j] | (uint8_t)((uint8_t)(a - '0') << (i % 8));
     }
     return war;
 };
 
-char *BB_from_char(struct bigbool *war)
+
+char *bool_from_char(struct bigbool *war)
 {
     int len =(war->last_byte - 1) * 8 + war->last_bit;
     char *vector = (char *)calloc(len + 1, sizeof(char));
@@ -102,9 +117,37 @@ char *BB_from_char(struct bigbool *war)
     return vector;
 }
 
-uint64_t BB_from_uint64(struct bigbool *war)
+
+uint64_t bool_from_uint64(struct bigbool *war)
 {
-    return 0;
+    if (war == NULL)
+    {
+        return ERROR_BAD_POINTER;
+    }
+
+    if (((war->last_byte - 1) * 8 + war->last_bit) > 64)
+    {
+        return ERROR_TOO_BIG;
+    }
+
+    uint64_t vector = 0;
+    int k = 0;
+    for (int i = 0; i < war->last_byte - 1; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            vector = vector | ((uint64_t)(((uint8_t)(1 << j) & war->parts[i]) >> j) << k);
+            k++;
+        }
+    }
+
+    for (int i = war->last_bit -1 ; i >= 0; i--)
+    {
+        vector = vector | ((uint64_t)(((uint8_t)(1 << i) & war->parts[war->last_byte - 1]) >> i) << k);
+        k++;
+    }
+    
+return vector;
 }
 
 struct bigbool *shift_left(struct bigbool *war, int n)
@@ -144,7 +187,6 @@ struct bigbool *shift_left(struct bigbool *war, int n)
     war->last_bit += n;
 return war;
 }
-
 
 struct bigbool *shift_right(struct bigbool *war, int n) // n = 17; last_bit = 5; last_byte = 3;
 {
