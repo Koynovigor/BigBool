@@ -21,7 +21,7 @@ int main()
         return 1;
     }
 
-    printf("%s\n", conversion_char(cyclic_shift_left(war, 1)));
+    printf("%s\n", conversion_char(cyclic_shift_right(war, 10)));
 
 return 0;
 }

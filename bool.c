@@ -31,7 +31,7 @@ char *scan_vector()
     return str;
 }
 
-struct bigbool *conversion_bool(char *vector)
+struct bigbool *char_from_BB(char *vector)
 {
     int len = strlen(vector);
     if (len == 0)
@@ -79,7 +79,7 @@ struct bigbool *conversion_bool(char *vector)
     return war;
 };
 
-char *conversion_char(struct bigbool *war)
+char *BB_from_char(struct bigbool *war)
 {
     int len =(war->last_byte - 1) * 8 + war->last_bit;
     char *vector = (char *)calloc(len + 1, sizeof(char));
@@ -100,6 +100,11 @@ char *conversion_char(struct bigbool *war)
     }
     vector[len] = 0x0;
     return vector;
+}
+
+uint64_t BB_from_uint64(struct bigbool *war)
+{
+    return 0;
 }
 
 struct bigbool *shift_left(struct bigbool *war, int n)
@@ -219,7 +224,7 @@ struct bigbool* cyclic_shift_left(struct bigbool *war, int n)
             x = (x << k) | (x << j);
             war->parts[war->last_byte - 1] = war->parts[war->last_byte - 1] ^ x;
         }
-        
+
         for (int i = war->last_byte - 2; i >= 0; i--)
         {
             for (int j = 7; j >= 0; j--)
@@ -234,10 +239,53 @@ struct bigbool* cyclic_shift_left(struct bigbool *war, int n)
         
     }
 return war;
-
 }
 
 struct bigbool* cyclic_shift_right(struct bigbool *war, int n)
 {
-    return war;
+    if (n == 0)
+    {
+        return war;
+    }
+
+    if (n < 0)
+    {
+        n *= -1;
+        return cyclic_shift_left(war, n);
+    }
+
+    if (war == NULL)
+    {
+        return NULL;
+    }
+
+    n = n%((war->last_byte - 1) * 8 + war->last_bit);
+    
+    for (int i = 0; i < n; i++)
+    {
+        int k = war->last_bit - 1;
+            
+        for (int i = 0; i < war->last_byte - 1; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                uint8_t x = (war->parts[war->last_byte - 1] >> k) & 1;
+                uint8_t y = (war->parts[i] >> j) & 1;
+                x = x ^ y; 
+                war->parts[war->last_byte - 1] = war->parts[war->last_byte - 1] ^ (x << k);
+                war->parts[i] = war->parts[i] ^ (x << j);
+            } 
+        }
+
+        for (int j = 0; j < k; j++)
+        {
+            uint8_t x = (war->parts[war->last_byte - 1] >> k) & 1;
+            uint8_t y = (war->parts[war->last_byte - 1] >> j) & 1;
+            x = x ^ y;
+            x = (x << k) | (x << j);
+            war->parts[war->last_byte - 1] = war->parts[war->last_byte - 1] ^ x;
+        }
+        
+    }
+return war;
 }
