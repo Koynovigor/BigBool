@@ -19,5 +19,6 @@ struct bigbool* shift_left(struct bigbool *war, int n);
 struct bigbool* shift_right(struct bigbool *war, int n);
 struct bigbool* cyclic_shift_left(struct bigbool *war, int n);
 struct bigbool* cyclic_shift_right(struct bigbool *war, int n);
+void free_bigbool(struct bigbool *war);
 
 #endif

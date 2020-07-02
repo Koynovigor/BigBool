@@ -96,6 +96,18 @@ struct bigbool *char_from_bool(char *vector)
 
 char *bool_from_char(struct bigbool *war)
 {
+    if (war == NULL)
+    {
+        return NULL;
+    }
+    
+    if ((war->last_bit == 0) && (war->last_byte == 0))
+    {
+        char *vector = (char *)calloc(1, sizeof(char));
+        vector[0] = '0';
+        return vector;
+    }
+
     int len =(war->last_byte - 1) * 8 + war->last_bit;
     char *vector = (char *)calloc(len + 1, sizeof(char));
     if (vector == NULL)
@@ -190,6 +202,11 @@ return war;
 
 struct bigbool *shift_right(struct bigbool *war, int n) // n = 17; last_bit = 5; last_byte = 3;
 {
+    if (war == NULL)
+    {
+        return NULL;
+    }
+
     if (n == 0)
     {
         return war;
@@ -201,9 +218,15 @@ struct bigbool *shift_right(struct bigbool *war, int n) // n = 17; last_bit = 5;
         return shift_left(war, n);
     }
 
-    if (war == NULL)
+    if (n >= ((war->last_byte - 1) * 8 + war->last_bit))
     {
-        return NULL;
+        for (int i = 0; i < war->last_byte; i++)
+        {
+            war->parts[i] = 0;
+        }
+        war->last_bit = 0;
+        war->last_byte = 0;
+    return war;
     }
 
     if (n >= war->last_bit)
@@ -331,3 +354,16 @@ struct bigbool* cyclic_shift_right(struct bigbool *war, int n)
     }
 return war;
 }
+
+
+void free_bigbool(struct bigbool *war)
+{
+    if ((war == NULL) || (war->parts == NULL))
+    {
+        return;
+    }
+    free(war->parts);
+    free(war);
+}
+
+
