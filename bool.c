@@ -56,6 +56,17 @@ char *scan_vector()
     return str;
 }
 
+int len_bb(struct bigbool *war)
+{
+    if (war == NULL)
+    {
+        perror("В функцию len_bb передан нулевой указатель");
+        return -1;
+    }
+    
+    return (((war->last_byte - 1) * 8) + war->last_bit);
+}
+
 struct bigbool *char_from_bool(char *vector)
 {
     int len = strlen(vector);
@@ -103,7 +114,6 @@ struct bigbool *char_from_bool(char *vector)
     return war;
 };
 
-
 char *bool_from_char(struct bigbool *war)
 {
     if (war == NULL)
@@ -119,7 +129,12 @@ char *bool_from_char(struct bigbool *war)
         return vector;
     }
 
-    int len =(war->last_byte - 1) * 8 + war->last_bit;
+    int len = len_bb(war);
+    if (len == -1)
+    {
+        return NULL;
+    }
+    
     char *vector = (char *)calloc(len + 1, sizeof(char));
     if (vector == NULL)
     {
@@ -141,7 +156,6 @@ char *bool_from_char(struct bigbool *war)
     return vector;
 }
 
-
 uint64_t bool_from_uint64(struct bigbool *war)
 {
     if (war == NULL)
@@ -150,7 +164,7 @@ uint64_t bool_from_uint64(struct bigbool *war)
         return ERROR_BAD_POINTER;
     }
 
-    if (((war->last_byte - 1) * 8 + war->last_bit) > 64)
+    if ((len_bb(war)) > 64)
     {
         perror("Введён слишком большой вектор");
         return ERROR_TOO_BIG;
@@ -216,7 +230,7 @@ struct bigbool *shift_left(struct bigbool *war, int n)
 return war;
 }
 
-struct bigbool *shift_right(struct bigbool *war, int n) // n = 17; last_bit = 5; last_byte = 3;
+struct bigbool *shift_right(struct bigbool *war, int n)
 {
     if (war == NULL)
     {
@@ -295,7 +309,7 @@ struct bigbool* cyclic_shift_left(struct bigbool *war, int n)
         return NULL;
     }
 
-    n = n%((war->last_byte - 1) * 8 + war->last_bit);
+    n = n%(len_bb(war));
     for (int i = 0; i < n; i++)
     {
         int k = war->last_bit - 1;
@@ -343,7 +357,7 @@ struct bigbool* cyclic_shift_right(struct bigbool *war, int n)
         return NULL;
     }
 
-    n = n%((war->last_byte - 1) * 8 + war->last_bit);
+    n = n%(len_bb(war));
     
     for (int i = 0; i < n; i++)
     {
@@ -374,7 +388,6 @@ struct bigbool* cyclic_shift_right(struct bigbool *war, int n)
 return war;
 }
 
-
 void free_bigbool(struct bigbool *war)
 {
     if ((war == NULL) || (war->parts == NULL))
@@ -386,11 +399,47 @@ void free_bigbool(struct bigbool *war)
     free(war);
 }
 
-struct bigbool* and_bb(struct bigbool* a, struct bigbool* b)
+struct bigbool* expansion_bb(struct bigbool* war, int n)
+{
+    if (war == NULL)
+    {
+        perror("Передан нулевой указатель в фукцию expansion_bb");
+        return NULL;
+    }
+    if (n == 0)
+    {
+        return war;
+    }
+    if (n < 0)
+    {
+        printf("Ошибка: расширение на отрицательное чисо");
+        return NULL;
+    }
+    
+    int len = len_bb(war);
+    if (shift_left(war, n) == NULL)
+    {
+        return NULL;
+    }
+
+    if (cyclic_shift_left(war, len) == NULL)
+    {
+        return NULL;
+    }
+return war;
+}
+
+struct bigbool* operation_bb(struct bigbool* a, int mode, struct bigbool* b)
 {
     if ((a == NULL) || (b == NULL))
     {
         perror("Передан нулевой(ые) указатель(и) в фукцию and_bb");
+        return NULL;
+    }
+
+    if ((mode != OR) && (mode != AND) && (mode != XOR))
+    {
+        fprintf(stderr, "if | - mode = OR; if & - mode = AND; if ^ - mode = XOR;");
         return NULL;
     }
 
@@ -401,64 +450,83 @@ struct bigbool* and_bb(struct bigbool* a, struct bigbool* b)
         return NULL;
     }
 
-    if ((a->last_byte | a->last_bit | b->last_byte | b->last_bit) == 0)
-    {
-        c->last_bit = 0;
-        c->last_byte = 0;
-        c->parts = calloc(1, sizeof(uint8_t));
-        if (c->parts == NULL)
-        {
-            perror("Ресурсы памяти исчерпаны");
-            return NULL;
-        }
-        c->parts[0] = 0;
-        return c;
-    }
-    
-    int count_bit = 0;
-    if (a->last_bit > b->last_bit)
+    if (len_bb(a) > len_bb(b))
     {
         c->last_bit = a->last_bit;
-        count_bit = b->last_bit;
+        c->last_byte = a->last_byte;
+        if (expansion_bb(b, (len_bb(a) - len_bb(b))) == NULL)
+        {
+            return NULL;
+        }
     }
     else
     {
         c->last_bit = b->last_bit;
-        count_bit = a->last_bit;
-    }
-
-    int count_byte = 0;
-    if (a->last_byte > b->last_byte)
-    {
-        c->last_byte = a->last_byte;
-        count_byte = b->last_byte;
-    }
-    else
-    {
         c->last_byte = b->last_byte;
-        count_byte = a->last_byte;
+        if (expansion_bb(a, (len_bb(b) - len_bb(a))) == NULL)
+        {
+            return NULL;
+        }
+    }
+    c->parts = calloc(c->last_byte, sizeof(uint8_t));
+    if (c == NULL)
+    {
+        perror("Не достаточно ресурсов памяти");
+        return NULL;
+    }
+    
+    if (mode == AND)
+    {
+        for (int i = 0; i < c->last_byte; i++)
+        {
+            c->parts[i] = a->parts[i] & b->parts[i];
+        }
+    }
+    if (mode == OR)
+    {
+        for (int i = 0; i < c->last_byte; i++)
+        {
+            c->parts[i] = a->parts[i] | b->parts[i];
+        }
+    }
+    if (mode == XOR)
+    {
+        for (int i = 0; i < c->last_byte; i++)
+        {
+            c->parts[i] = a->parts[i] ^ b->parts[i];
+        }
+    }
+    
+return c;
+}
+
+struct bigbool* invertbb(struct bigbool* a)
+{
+    if (a == NULL)
+    {
+        perror("Передан нулевой указатель в фукцию invert_bb");
+        return NULL;
     }
 
-    c->parts = (uint8_t *)calloc(c->last_byte, sizeof(uint8_t));
-    if (c->parts == NULL)
+    struct bigbool* c = (struct bigbool *)calloc(1, sizeof(struct bigbool));
+    if (c == NULL)
     {
         perror("Ресурсы памяти исчерпаны");
         return NULL;
     }
+    c->last_bit = a->last_bit;
+    c->last_byte = a->last_byte;
+    c->parts = calloc(c->last_byte, sizeof(uint8_t));
 
-    for (int i = 0; i < count_byte - 1; i++)
+    for (int i = 0; i < a->last_byte; i++)
     {
-        c->parts[i] = a->parts[i] & b->parts[i];
+        c->parts[i] = (uint8_t)~(a->parts[i]);
+    }
+
+    for (int i = a->last_bit; i < 8; i++)
+    {
+        c->parts[c->last_byte-1] &= ~(1 << i);
     }
     
-    for (int i = 0; i < count_bit; i++)
-    {
-        c->parts[count_byte - 1] |= ((uint8_t)(1 << i) & a->parts[count_byte - 1]) & ((uint8_t)(1 << i) & b->parts[count_byte - 1]);
-    }
-    
-    for (int i = count_byte; i < c->last_byte; i++)
-    {
-        c->parts[i] = 0;
-    }
 return c;
 }
