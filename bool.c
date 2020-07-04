@@ -17,6 +17,7 @@ char *scan_vector()
     }
 
     int beginning = 1;
+    int delete = 0;
     while ((symbol = fgetc(stdin)) != '\n')
     {
         if (((symbol - '0') | 0x1) != 0x1)
@@ -27,6 +28,7 @@ char *scan_vector()
 
         if (((symbol - '0') == 0x0) && (beginning))
         {
+            delete ++;
             continue;
         }
         if (((symbol - '0') == 0x1) && (beginning))
@@ -41,12 +43,28 @@ char *scan_vector()
             str = (char *)realloc(str, count_max + 128);
             if (str == NULL)
             {
+                perror("Ресурсы пямяти исчерпаны");
                 return NULL;
             }
             count_max += 128;
-        }
+        }      
+    }
+    if ((strlen(str) == 0) && delete)
+    {
+        str[0] = '0';
     }
     return str;
+}
+
+int len_bb(struct bigbool *war)
+{
+    if (war == NULL)
+    {
+        perror("В функцию len_bb передан нулевой указатель");
+        return -1;
+    }
+    
+    return (((war->last_byte - 1) * 8) + war->last_bit);
 }
 
 struct bigbool *char_from_bool(char *vector)
@@ -54,12 +72,14 @@ struct bigbool *char_from_bool(char *vector)
     int len = strlen(vector);
     if (len == 0)
     {
+        perror("Вы передали нулевой указатель в функцию char_from_bool");
         return NULL;
     }
 
     struct bigbool *war = (struct bigbool *)calloc(1, sizeof(struct bigbool));
     if (war == NULL)
     {
+        perror("Ресурсы пямяти исчерпаны");
         return NULL;
     }
 
@@ -76,6 +96,7 @@ struct bigbool *char_from_bool(char *vector)
     war->parts = (uint8_t *)calloc(war->last_byte, sizeof(uint8_t));
     if (war->parts == NULL)
     {
+        perror("Ресурсы пямяти исчерпаны");
         return NULL;
     }
 
@@ -93,11 +114,11 @@ struct bigbool *char_from_bool(char *vector)
     return war;
 };
 
-
 char *bool_from_char(struct bigbool *war)
 {
     if (war == NULL)
     {
+        perror("Передан нулевой указатель в фукцию bool_from_char");
         return NULL;
     }
     
@@ -108,10 +129,16 @@ char *bool_from_char(struct bigbool *war)
         return vector;
     }
 
-    int len =(war->last_byte - 1) * 8 + war->last_bit;
+    int len = len_bb(war);
+    if (len == -1)
+    {
+        return NULL;
+    }
+    
     char *vector = (char *)calloc(len + 1, sizeof(char));
     if (vector == NULL)
     {
+        perror("Ресурсы пямяти исчерпаны");
         return NULL;
     }
 
@@ -129,16 +156,17 @@ char *bool_from_char(struct bigbool *war)
     return vector;
 }
 
-
 uint64_t bool_from_uint64(struct bigbool *war)
 {
     if (war == NULL)
     {
+        perror("Передан нулевой указатель в фукцию bool_from_uint64");
         return ERROR_BAD_POINTER;
     }
 
-    if (((war->last_byte - 1) * 8 + war->last_bit) > 64)
+    if ((len_bb(war)) > 64)
     {
+        perror("Введён слишком большой вектор");
         return ERROR_TOO_BIG;
     }
 
@@ -177,6 +205,7 @@ struct bigbool *shift_left(struct bigbool *war, int n)
 
     if (war == NULL)
     {
+        perror("Передан нулевой указатель в фукцию shift_left");
         return NULL;
     }
     
@@ -186,6 +215,7 @@ struct bigbool *shift_left(struct bigbool *war, int n)
         war->parts = (uint8_t *)realloc(war->parts, (int)war->last_byte + k);
         if (war->parts == NULL)
         {
+            perror("Ресурсы памяти исчерпаны");
             return NULL;
         }
         for (int i = war->last_byte; i < (int)war->last_byte + k; i++)
@@ -200,10 +230,11 @@ struct bigbool *shift_left(struct bigbool *war, int n)
 return war;
 }
 
-struct bigbool *shift_right(struct bigbool *war, int n) // n = 17; last_bit = 5; last_byte = 3;
+struct bigbool *shift_right(struct bigbool *war, int n)
 {
     if (war == NULL)
     {
+        perror("Передан нулевой указатель в фукцию shift_right");
         return NULL;
     }
 
@@ -274,10 +305,11 @@ struct bigbool* cyclic_shift_left(struct bigbool *war, int n)
 
     if (war == NULL)
     {
+        perror("Передан нулевой указатель в фукцию cyclic_shift_left");
         return NULL;
     }
 
-    n = n%((war->last_byte - 1) * 8 + war->last_bit);
+    n = n%(len_bb(war));
     for (int i = 0; i < n; i++)
     {
         int k = war->last_bit - 1;
@@ -321,10 +353,11 @@ struct bigbool* cyclic_shift_right(struct bigbool *war, int n)
 
     if (war == NULL)
     {
+        perror("Передан нулевой указатель в фукцию cyclic_shift_right");
         return NULL;
     }
 
-    n = n%((war->last_byte - 1) * 8 + war->last_bit);
+    n = n%(len_bb(war));
     
     for (int i = 0; i < n; i++)
     {
@@ -355,15 +388,145 @@ struct bigbool* cyclic_shift_right(struct bigbool *war, int n)
 return war;
 }
 
-
 void free_bigbool(struct bigbool *war)
 {
     if ((war == NULL) || (war->parts == NULL))
     {
+        perror("Передан нулевой указатель в фукцию free_bigbool");
         return;
     }
     free(war->parts);
     free(war);
 }
 
+struct bigbool* expansion_bb(struct bigbool* war, int n)
+{
+    if (war == NULL)
+    {
+        perror("Передан нулевой указатель в фукцию expansion_bb");
+        return NULL;
+    }
+    if (n == 0)
+    {
+        return war;
+    }
+    if (n < 0)
+    {
+        printf("Ошибка: расширение на отрицательное чисо");
+        return NULL;
+    }
+    
+    int len = len_bb(war);
+    if (shift_left(war, n) == NULL)
+    {
+        return NULL;
+    }
 
+    if (cyclic_shift_left(war, len) == NULL)
+    {
+        return NULL;
+    }
+return war;
+}
+
+struct bigbool* operation_bb(struct bigbool* a, int mode, struct bigbool* b)
+{
+    if ((a == NULL) || (b == NULL))
+    {
+        perror("Передан нулевой(ые) указатель(и) в фукцию and_bb");
+        return NULL;
+    }
+
+    if ((mode != OR) && (mode != AND) && (mode != XOR))
+    {
+        fprintf(stderr, "if | - mode = OR; if & - mode = AND; if ^ - mode = XOR;");
+        return NULL;
+    }
+
+    struct bigbool* c = (struct bigbool *)calloc(1, sizeof(struct bigbool));
+    if (c == NULL)
+    {
+        perror("Ресурсы памяти исчерпаны");
+        return NULL;
+    }
+
+    if (len_bb(a) > len_bb(b))
+    {
+        c->last_bit = a->last_bit;
+        c->last_byte = a->last_byte;
+        if (expansion_bb(b, (len_bb(a) - len_bb(b))) == NULL)
+        {
+            return NULL;
+        }
+    }
+    else
+    {
+        c->last_bit = b->last_bit;
+        c->last_byte = b->last_byte;
+        if (expansion_bb(a, (len_bb(b) - len_bb(a))) == NULL)
+        {
+            return NULL;
+        }
+    }
+    c->parts = calloc(c->last_byte, sizeof(uint8_t));
+    if (c == NULL)
+    {
+        perror("Не достаточно ресурсов памяти");
+        return NULL;
+    }
+    
+    if (mode == AND)
+    {
+        for (int i = 0; i < c->last_byte; i++)
+        {
+            c->parts[i] = a->parts[i] & b->parts[i];
+        }
+    }
+    if (mode == OR)
+    {
+        for (int i = 0; i < c->last_byte; i++)
+        {
+            c->parts[i] = a->parts[i] | b->parts[i];
+        }
+    }
+    if (mode == XOR)
+    {
+        for (int i = 0; i < c->last_byte; i++)
+        {
+            c->parts[i] = a->parts[i] ^ b->parts[i];
+        }
+    }
+    
+return c;
+}
+
+struct bigbool* invertbb(struct bigbool* a)
+{
+    if (a == NULL)
+    {
+        perror("Передан нулевой указатель в фукцию invert_bb");
+        return NULL;
+    }
+
+    struct bigbool* c = (struct bigbool *)calloc(1, sizeof(struct bigbool));
+    if (c == NULL)
+    {
+        perror("Ресурсы памяти исчерпаны");
+        return NULL;
+    }
+    c->last_bit = a->last_bit;
+    c->last_byte = a->last_byte;
+    c->parts = calloc(c->last_byte, sizeof(uint8_t));
+
+    for (int i = 0; i < a->last_byte; i++)
+    {
+        c->parts[i] = (uint8_t)~(a->parts[i]);
+    }
+
+    for (int i = a->last_bit; i < 8; i++)
+    {
+        c->parts[c->last_byte-1] &= ~(1 << i);
+    }
+    
+return c;
+}
