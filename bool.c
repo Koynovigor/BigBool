@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 char *scan_vector()
 {
     int count = 0;
@@ -22,7 +23,7 @@ char *scan_vector()
     {
         if (((symbol - '0') | 0x1) != 0x1)
         {
-            perror("Не правильно введён вектор");
+            fprintf(stderr, "Не правильно введён вектор\n EXE: 101011");
             return NULL;
         }
 
@@ -60,7 +61,7 @@ int len_bb(struct bigbool *war)
 {
     if (war == NULL)
     {
-        perror("В функцию len_bb передан нулевой указатель");
+        fprintf(stderr, "В функцию len_bb передан нулевой указатель");
         return -1;
     }
     
@@ -72,7 +73,7 @@ struct bigbool *char_from_bool(char *vector)
     int len = strlen(vector);
     if (len == 0)
     {
-        perror("Вы передали нулевой указатель в функцию char_from_bool");
+        fprintf(stderr,"Вы передали нулевой указатель в функцию char_from_bool");
         return NULL;
     }
 
@@ -118,14 +119,26 @@ char *bool_from_char(struct bigbool *war)
 {
     if (war == NULL)
     {
-        perror("Передан нулевой указатель в фукцию bool_from_char");
+        fprintf(stderr, "Передан нулевой указатель в фукцию bool_from_char");
         return NULL;
     }
     
     if ((war->last_bit == 0) && (war->last_byte == 0))
     {
-        char *vector = (char *)calloc(1, sizeof(char));
-        vector[0] = '0';
+        fprintf(stderr, "Передана пустая структура в фукцию bool_from_char");
+        return NULL;
+    }
+
+    if ((war->last_bit == 1) && (war->last_byte == 1))
+    {
+        char *vector = (char *)calloc(2, sizeof(char));
+        if (vector == NULL)
+        {
+            perror("Ресурсы пямяти исчерпаны");
+            return NULL;
+        }
+        vector[0] = (int)war->parts[0] + '0';
+        vector[1] = 0x0;
         return vector;
     }
 
@@ -160,34 +173,90 @@ uint64_t bool_from_uint64(struct bigbool *war)
 {
     if (war == NULL)
     {
-        perror("Передан нулевой указатель в фукцию bool_from_uint64");
+        fprintf(stderr, "Передан нулевой указатель в фукцию bool_from_uint64");
         return ERROR_BAD_POINTER;
     }
 
     if ((len_bb(war)) > 64)
     {
-        perror("Введён слишком большой вектор");
+        fprintf(stderr, "Введён слишком большой вектор");
         return ERROR_TOO_BIG;
     }
 
     uint64_t vector = 0;
     int k = 0;
+    for (int i = war->last_bit - 1 ; i >= 0; i--)
+    {
+        vector |= ((uint64_t)(((uint8_t)(1 << i) & war->parts[war->last_byte - 1]) >> i) << k);
+        k++;
+    }
+
+    for (int i = war->last_byte - 2; i >= 0; i--)
+    {
+        for (int j = 7; j >= 0; j--)
+        {
+            vector |= ((uint64_t)(((uint8_t)(1 << j) & war->parts[i]) >> j) << k);
+            k++;
+        }
+    }
+    
+return vector;
+}
+
+struct bigbool *uint64_from_bool(uint64_t vector)
+{
+    int len = 0;
+    for (len = 63; len >= 0; len--)
+    {
+        if ((((uint64_t)(1 << len) & vector) >> len) == 1)
+        {
+            break;
+        } 
+    }
+    if (len == -1)
+    {
+        len++;
+    }
+    len ++;
+    struct bigbool *war = (struct bigbool *)calloc(1, sizeof(struct bigbool));
+    if (war == NULL)
+    {
+        perror("Ресурсы пямяти исчерпаны");
+        return NULL;
+    }
+    war->last_bit = (uint8_t)len%8;
+    war->last_byte = (uint8_t)len/8;
+    if (war->last_bit == 0)
+    {
+        war->last_bit = 8;
+    }
+    else
+    {
+        war->last_byte++;
+    }
+    war->parts = (uint8_t *)calloc(war->last_byte, sizeof(uint8_t));
+    if (war->parts == NULL)
+    {
+        perror("Ресурсы пямяти исчерпаны");
+        return NULL;
+    }
+
     for (int i = 0; i < war->last_byte - 1; i++)
     {
         for (int j = 0; j < 8; j++)
         {
-            vector = vector | ((uint64_t)(((uint8_t)(1 << j) & war->parts[i]) >> j) << k);
-            k++;
+            war->parts[i] |= ((((1 << (len - 1)) & vector) >> (len - 1)) << j);
+            len --;
         }
     }
 
-    for (int i = war->last_bit -1 ; i >= 0; i--)
+    for (int i = 0; i < war->last_bit; i++)
     {
-        vector = vector | ((uint64_t)(((uint8_t)(1 << i) & war->parts[war->last_byte - 1]) >> i) << k);
-        k++;
+        war->parts[war->last_byte - 1] |= ((((1 << (len - 1)) & vector) >> (len - 1)) << i);
+        len --;
     }
     
-return vector;
+return war;
 }
 
 struct bigbool *shift_left(struct bigbool *war, int n)
