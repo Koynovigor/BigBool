@@ -274,28 +274,32 @@ struct bigbool *shift_left(struct bigbool *war, int n)
 
     if (war == NULL)
     {
-        perror("Передан нулевой указатель в фукцию shift_left");
+        fprintf(stderr, "Передан нулевой указатель в фукцию shift_left");
         return NULL;
     }
     
-    if (n > (8 - (int)war->last_bit))
+    int len = len_bb(war) + n;
+    int count = war->last_byte;
+    war->last_byte = len/8 + 1;
+    war->last_bit = len % 8;
+    if (war->last_bit == 0)
     {
-        int k = n/8 + (n%8 != 0);
-        war->parts = (uint8_t *)realloc(war->parts, (int)war->last_byte + k);
-        if (war->parts == NULL)
-        {
-            perror("Ресурсы памяти исчерпаны");
-            return NULL;
-        }
-        for (int i = war->last_byte; i < (int)war->last_byte + k; i++)
-        {
-            war->parts[i] = 0;
-        }
-        war->last_byte += k;
-        war->last_bit = (war->last_bit + n) % 8;
-        return war;
+        war->last_byte --;
+        war->last_bit = 8;
     }
-    war->last_bit += n;
+
+    war->parts = (uint8_t *)realloc(war->parts, war->last_byte);
+    if (war->parts == NULL)
+    {
+        perror("Ресурсы памяти исчерпаны");
+        return NULL;
+    }
+
+    for (int i = count; i < war->last_byte; i++)
+    {
+        war->parts[i] = 0;
+    }
+
 return war;
 }
 
@@ -303,7 +307,7 @@ struct bigbool *shift_right(struct bigbool *war, int n)
 {
     if (war == NULL)
     {
-        perror("Передан нулевой указатель в фукцию shift_right");
+        fprintf(stderr, "Передан нулевой указатель в фукцию shift_right");
         return NULL;
     }
 
@@ -318,44 +322,43 @@ struct bigbool *shift_right(struct bigbool *war, int n)
         return shift_left(war, n);
     }
 
-    if (n >= ((war->last_byte - 1) * 8 + war->last_bit))
+    if (n >= len_bb(war))
     {
-        for (int i = 0; i < war->last_byte; i++)
+        war->parts = (uint8_t *)realloc(war->parts, 1);
+        if (war->parts == NULL)
         {
-            war->parts[i] = 0;
+            perror("Ресурсы памяти исчерпаны");
+            return NULL;
         }
-        war->last_bit = 0;
-        war->last_byte = 0;
+        war->parts[0] = 0;
+        war->last_bit = 1;
+        war->last_byte = 1;
     return war;
     }
 
-    if (n >= war->last_bit)
+    int len = len_bb(war) - n;
+    war->last_byte = len/8 + 1;
+    war->last_bit = len % 8;
+    if (war->last_bit == 0)
     {
-        int k = (n - war->last_bit)/8 + 1; // k = 2;
-        
-        if (k > 1)
-        {
-            for (int i = war->last_byte - 1; i > war->last_byte - k; i--) // i = 2, 1;
-            {
-                war->parts[i] = 0;
-            }
-            
-        }
-        war->last_byte -= k; // last_byte = 0;
+        war->last_byte --;
+        war->last_bit = 8;
+    }
 
-        war->last_bit = (war->last_bit + (8 - n%8))%8; // last_bit = (5 + (8 - 1))%8 = 4;
-        for (int i = war->last_bit; i <= 8 ; i++) // i = 4, 5, 6, 7, 8;
-        {
-            war->parts[war->last_byte - 1] = war->parts[war->last_byte - 1] & ~((uint8_t)(1<<i));
-        }
-        return war; 
-    }
-    
-    for (int i = war->last_bit - n; i < war->last_bit; i++)
+    war->parts = (uint8_t *)realloc(war->parts, war->last_byte);
+    if (war->parts == NULL)
     {
-        war->parts[war->last_byte - 1] = war->parts[war->last_byte - 1] & ~((uint8_t)(1<<i));
+        perror("Ресурсы памяти исчерпаны");
+        return NULL;
+    } 
+    
+    uint8_t delite = 0;
+    for (int i = 7; i >= war->last_bit; i--)
+    {
+        delite |= 1 << i;
     }
-    war->last_bit -= n;
+    war->parts[war->last_byte - 1] &=  ~(delite);
+
 return war;
 }
 
@@ -374,7 +377,7 @@ struct bigbool* cyclic_shift_left(struct bigbool *war, int n)
 
     if (war == NULL)
     {
-        perror("Передан нулевой указатель в фукцию cyclic_shift_left");
+        fprintf(stderr, "Передан нулевой указатель в фукцию cyclic_shift_left");
         return NULL;
     }
 
@@ -422,7 +425,7 @@ struct bigbool* cyclic_shift_right(struct bigbool *war, int n)
 
     if (war == NULL)
     {
-        perror("Передан нулевой указатель в фукцию cyclic_shift_right");
+        fprintf(stderr, "Передан нулевой указатель в фукцию cyclic_shift_right");
         return NULL;
     }
 
@@ -461,7 +464,7 @@ void free_bigbool(struct bigbool *war)
 {
     if ((war == NULL) || (war->parts == NULL))
     {
-        perror("Передан нулевой указатель в фукцию free_bigbool");
+        fprintf(stderr, "Передан нулевой указатель в фукцию free_bigbool");
         return;
     }
     free(war->parts);
@@ -472,7 +475,7 @@ struct bigbool* expansion_bb(struct bigbool* war, int n)
 {
     if (war == NULL)
     {
-        perror("Передан нулевой указатель в фукцию expansion_bb");
+        fprintf(stderr, "Передан нулевой указатель в фукцию expansion_bb");
         return NULL;
     }
     if (n == 0)
@@ -481,7 +484,7 @@ struct bigbool* expansion_bb(struct bigbool* war, int n)
     }
     if (n < 0)
     {
-        printf("Ошибка: расширение на отрицательное чисо");
+        fprintf(stderr, "Ошибка: расширение на отрицательное чисо");
         return NULL;
     }
     
@@ -502,13 +505,13 @@ struct bigbool* operation_bb(struct bigbool* a, int mode, struct bigbool* b)
 {
     if ((a == NULL) || (b == NULL))
     {
-        perror("Передан нулевой(ые) указатель(и) в фукцию and_bb");
+        fprintf(stderr, "Передан нулевой(ые) указатель(и) в фукцию and_bb");
         return NULL;
     }
 
     if ((mode != OR) && (mode != AND) && (mode != XOR))
     {
-        fprintf(stderr, "if | - mode = OR; if & - mode = AND; if ^ - mode = XOR;");
+        fprintf(stderr, "if '|' - mode = OR; if '&' - mode = AND; if '^' - mode = XOR;");
         return NULL;
     }
 
@@ -573,7 +576,7 @@ struct bigbool* invertbb(struct bigbool* a)
 {
     if (a == NULL)
     {
-        perror("Передан нулевой указатель в фукцию invert_bb");
+        fprintf(stderr, "Передан нулевой указатель в фукцию invert_bb");
         return NULL;
     }
 
