@@ -4,6 +4,7 @@
 #include <criterion/criterion.h>
 #include <inttypes.h>
 
+
 Test(unit, creat_bb) { // x^y = (!x | !y)&(x | y)
 
     for (uint64_t i = 0; i < SHRT_MAX; i++)
@@ -46,3 +47,4 @@ Test(unit, creat_bb) { // x^y = (!x | !y)&(x | y)
         free_bigbool(x);
     }
 }
+
