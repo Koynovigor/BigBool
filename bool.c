@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 char *scan_vector()
 {
     int count = 0;
@@ -602,3 +601,4 @@ struct bigbool* invertbb(struct bigbool* a)
     
 return c;
 }
+

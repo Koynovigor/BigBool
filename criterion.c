@@ -4,6 +4,7 @@
 #include <criterion/criterion.h>
 #include <inttypes.h>
 
+
 Test(unit, creat_bb) {
 
     for (uint64_t i = 0; i < SHRT_MAX; i++)
@@ -22,6 +23,7 @@ Test(unit, creat_bb) {
         free_bigbool(war);
     }
 }
+
 
 Test(unit, shift_bb) {
 
